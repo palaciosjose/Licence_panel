@@ -619,9 +619,30 @@ class LicenseAPI {
         ];
         
         $request_data_json = json_encode($request_data);
-        
+
         $stmt->bind_param("iissssss", $license_id, $activation_id, $action, $status, $message, $ip, $user_agent, $request_data_json);
-        $stmt->execute();
+        try {
+            $stmt->execute();
+        } catch (mysqli_sql_exception $e) {
+            if (strpos($e->getMessage(), "Data truncated for column 'action'") !== false) {
+                // Backwards compatibility: if the column is numeric, map action strings to codes
+                $actionMap = [
+                    'validation'   => 1,
+                    'activation'   => 2,
+                    'verification' => 3,
+                    'deactivation' => 4,
+                ];
+                $actionCode = $actionMap[$action] ?? 0;
+                $stmt = $this->conn->prepare(
+                    "INSERT INTO license_logs (license_id, activation_id, action, status, message, ip_address, user_agent, request_data)"
+                    . " VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                );
+                $stmt->bind_param("iiisssss", $license_id, $activation_id, $actionCode, $status, $message, $ip, $user_agent, $request_data_json);
+                $stmt->execute();
+            } else {
+                throw $e;
+            }
+        }
     }
     
     private function sendSuccess($data) {
