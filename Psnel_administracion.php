@@ -10,7 +10,7 @@ session_start();
 $license_db_config = [
     'host' => 'localhost',
     'username' => 'warsup_sdcode',
-    'password' => 'warsup_sdcode', 
+    'password' => 'warsup_sdcode',
     'database' => 'warsup_sdcode'
 ];
 

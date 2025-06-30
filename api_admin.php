@@ -1,229 +1,178 @@
 <?php
 /**
- * API para el Panel de Administración de Licencias
- * Maneja solicitudes AJAX para obtener y actualizar datos.
- * Version: 1.2 - Con verificaciones en tiempo real y logs mejorados
+ * API Administrativo Mejorado con Rate Limiting y Monitoreo
+ * Version: 2.0
  */
 
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *'); // Considera restringir esto en producción a tu dominio
-header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header("Content-Type: application/json");
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
 
-// Manejar preflight OPTIONS request
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
     http_response_code(200);
     exit();
 }
 
 session_start();
 
-// Configuración de la base de datos (copiada de Psnel_administracion.php)
+// Incluir clases necesarias
+require_once "RateLimiter.class.php";
+require_once "LicenseMonitor.class.php";
+
+// Configuración de la base de datos
 $license_db_config = [
-    'host' => 'localhost',
-    'username' => 'warsup_sdcode',
-    'password' => 'warsup_sdcode',
-    'database' => 'warsup_sdcode'
+    "host" => "localhost",
+    "username" => "warsup_sdcode",
+    "password" => "warsup_sdcode",
+    "database" => "warsup_sdcode"
 ];
 
-// Incluir la clase LicenseManager y la configuración de WhatsApp
-require_once 'LicenseManager.class.php';
-require_once 'whatsapp_config.php'; // Se necesita para pasar la configuración a LicenseManager
+// Verificar rate limiting
+$clientIP = $_SERVER["REMOTE_ADDR"] ?? "unknown";
+$action = $_GET["action"] ?? $_POST["action"] ?? "default";
+
+if (!RateLimiter::checkLimit($clientIP, $action)) {
+    http_response_code(429);
+    echo json_encode([
+        "success" => false,
+        "error" => "Rate limit exceeded",
+        "retry_after" => 3600
+    ]);
+    exit;
+}
+
+// Incluir LicenseManager mejorado si existe, sino el original
+if (file_exists("LicenseManager.improved.php")) {
+    require_once "LicenseManager.improved.php";
+    // Renombrar la clase si es necesario
+    if (!class_exists("LicenseManager") && class_exists("ImprovedLicenseManager")) {
+        class_alias("ImprovedLicenseManager", "LicenseManager");
+    }
+} else {
+    require_once "LicenseManager.class.php";
+}
+
+if (file_exists("whatsapp_config.php")) {
+    require_once "whatsapp_config.php";
+} else {
+    $whatsapp_config = ["enabled" => false];
+}
 
 try {
-    // Instanciar LicenseManager con la configuración de WhatsApp
     $licenseManager = new LicenseManager($license_db_config, $whatsapp_config);
 } catch (Exception $e) {
-    // Si falla la conexión a la DB, devolver error JSON
-    echo json_encode(['success' => false, 'error' => 'Error de conexión a la base de datos.', 'code' => 500]);
     http_response_code(500);
+    echo json_encode([
+        "success" => false,
+        "error" => "Database connection failed",
+        "debug" => $e->getMessage()
+    ]);
     exit;
 }
 
-// Verifica si el usuario está logueado a través de la sesión
-if (!isset($_SESSION['license_admin']) || empty($_SESSION['license_admin']['id'])) {
-    echo json_encode(['success' => false, 'error' => 'No autorizado. Se requiere iniciar sesión.']);
-    http_response_code(401);
-    exit;
+// Verificar autenticación para acciones protegidas
+$protectedActions = ["get_license_details", "update_license", "delete_license", "get_stats"];
+if (in_array($action, $protectedActions)) {
+    if (!isset($_SESSION["license_admin"]) || empty($_SESSION["license_admin"]["id"])) {
+        http_response_code(401);
+        echo json_encode([
+            "success" => false,
+            "error" => "Authentication required"
+        ]);
+        exit;
+    }
 }
 
+// Manejar acciones
 
-$action = $_GET['action'] ?? $_POST['action'] ?? '';
+    
+function calculateMemoryUsage() {
+    $memoryLimit = ini_get("memory_limit");
+    
+    // Convertir memory_limit a bytes
+    if (preg_match("/^(\d+)(.)$/", $memoryLimit, $matches)) {
+        $number = (int)$matches[1];
+        $unit = strtolower($matches[2]);
+        
+        switch ($unit) {
+            case "g": $memoryLimitBytes = $number * 1024 * 1024 * 1024; break;
+            case "m": $memoryLimitBytes = $number * 1024 * 1024; break;
+            case "k": $memoryLimitBytes = $number * 1024; break;
+            default: $memoryLimitBytes = $number; break;
+        }
+    } else {
+        $memoryLimitBytes = (int)$memoryLimit;
+    }
+    
+    $memoryUsed = memory_get_usage(true);
+    
+    // Verificar que los valores sean válidos
+    if ($memoryLimitBytes <= 0 || $memoryUsed <= 0) {
+        return 0;
+    }
+    
+    $percentage = ($memoryUsed / $memoryLimitBytes) * 100;
+    
+    // Limitar a un máximo de 100% para evitar valores absurdos
+    return min(100, round($percentage, 2));
+}
 
 switch ($action) {
-    case 'get_license_details':
-        $license_id = (int)($_GET['id'] ?? 0);
-        if ($license_id > 0) {
-            $license_details = $licenseManager->getLicenseDetails($license_id);
-            if ($license_details) {
-                echo json_encode(['success' => true, 'license' => $license_details]);
-            } else {
-                echo json_encode(['success' => false, 'error' => 'Licencia no encontrada']);
-                http_response_code(404);
-            }
-        } else {
-            echo json_encode(['success' => false, 'error' => 'ID de licencia inválido']);
-            http_response_code(400);
-        }
+    case "monitor":
+        $health = LicenseMonitor::checkSystemHealth();
+        echo json_encode([
+            "success" => true,
+            "health" => $health,
+            "rate_limits" => [
+                "remaining" => RateLimiter::getRemainingRequests($clientIP, $action),
+                "blocked_ips" => RateLimiter::getBlockedIPs(1)
+            ]
+        ]);
         break;
-
-    case 'update_license':
-        $input = json_decode(file_get_contents('php://input'), true); // Para manejar JSON POST
-        if (!$input) {
-            $input = $_POST; // Fallback para POST tradicionales si Content-Type no es application/json
-        }
-
-        $required_fields = ['id', 'client_name', 'client_email', 'product_name', 'version', 'license_type', 'max_domains', 'notes', 'status'];
-        foreach ($required_fields as $field) {
-            if (!isset($input[$field])) {
-                echo json_encode(['success' => false, 'error' => "Falta el campo requerido: $field"]);
-                http_response_code(400);
-                exit;
-            }
-        }
-
-        $result = $licenseManager->updateLicense($input); // Pasa todo el array $input
-        if ($result['success']) {
-            echo json_encode(['success' => true, 'message' => 'Licencia actualizada exitosamente']);
-        } else {
-            echo json_encode(['success' => false, 'error' => 'Error al actualizar licencia: ' . ($result['error'] ?? 'Desconocido')]);
-            http_response_code(500);
-        }
+        
+    case "alerts":
+        $hours = (int)($_GET["hours"] ?? 24);
+        $alerts = LicenseMonitor::getRecentAlerts($hours);
+        echo json_encode([
+            "success" => true,
+            "alerts" => $alerts
+        ]);
         break;
-
-    case 'get_stats':
-        $stats = $licenseManager->getLicenseStats();
-        echo json_encode(['success' => true, 'stats' => $stats]);
+        
+    case "rate_limit_status":
+        echo json_encode([
+            "success" => true,
+            "remaining_requests" => RateLimiter::getRemainingRequests($clientIP, "default"),
+            "blocked_ips" => RateLimiter::getBlockedIPs(1)
+        ]);
         break;
-
-    case 'get_recent_verifications':
-        // Obtener verificaciones recientes
-        $limit = (int)($_GET['limit'] ?? 50);
-        $status_filter = $_GET['status_filter'] ?? null;
-        $verifications = $licenseManager->getRecentVerifications($limit, $status_filter);
-        echo json_encode(['success' => true, 'verifications' => $verifications]);
+        
+    case "system_stats":
+        $stats = [
+            "disk_usage" => round((1 - disk_free_space(".") / disk_total_space(".")) * 100, 2),
+            "memory_usage" => calculateMemoryUsage(),
+            "php_version" => PHP_VERSION,
+            "server_time" => date("Y-m-d H:i:s"),
+            "uptime" => sys_getloadavg()
+        ];
+        
+        echo json_encode([
+            "success" => true,
+            "stats" => $stats
+        ]);
         break;
-
-    case 'get_verification_stats':
-        // Estadísticas de verificaciones
-        $stats = $licenseManager->getVerificationStats();
-        echo json_encode(['success' => true, 'stats' => $stats]);
-        break;
-
-    case 'get_activations': // Modificado para devolver los campos que necesita el dashboard de verificaciones
-        $license_id = (int)($_GET['license_id'] ?? 0); // Permite filtrar por licencia si es necesario
-        $activations = $licenseManager->getActivations($license_id);
-        // Filtra para solo devolver activaciones activas, si no hay un filtro específico.
-        // La tabla "Estado de Activaciones" en el dashboard de verificaciones muestra solo activas.
-        $active_activations = array_filter($activations, function($act) {
-            return $act['status'] === 'active';
-        });
-        echo json_encode(['success' => true, 'activations' => array_values($active_activations)]);
-        break;
-
-    case 'get_activation_details':
-        $activation_id = (int)($_GET['id'] ?? 0);
-        if ($activation_id > 0) {
-            // Obtenemos los detalles completos de la activación, incluyendo información de la licencia
-            $stmt = $licenseManager->getDbConnection()->prepare("
-                SELECT la.*, l.client_name, l.client_phone, l.license_key,
-                       l.product_name, l.version, l.expires_at
-                FROM license_activations la
-                JOIN licenses l ON la.license_id = l.id
-                WHERE la.id = ?
-            ");
-            $stmt->bind_param("i", $activation_id);
-            $stmt->execute();
-            $activation_details = $stmt->get_result()->fetch_assoc();
-            
-            if ($activation_details) {
-                // También obtenemos el historial de verificaciones para esta activación
-                $stmt = $licenseManager->getDbConnection()->prepare("
-                    SELECT * FROM license_logs 
-                    WHERE activation_id = ? AND action = 'verification'
-                    ORDER BY created_at DESC 
-                    LIMIT 20
-                ");
-                $stmt->bind_param("i", $activation_id);
-                $stmt->execute();
-                $verification_history = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-                
-                $activation_details['verification_history'] = $verification_history;
-                
-                echo json_encode(['success' => true, 'activation' => $activation_details]);
-            } else {
-                echo json_encode(['success' => false, 'error' => 'Activación no encontrada']);
-                http_response_code(404);
-            }
-        } else {
-            echo json_encode(['success' => false, 'error' => 'ID de activación inválido']);
-            http_response_code(400);
-        }
-        break;
-
-    case 'get_live_activity': // Nuevo endpoint para la actividad en tiempo real
-        $minutes = (int)($_GET['minutes'] ?? 5);
-        $activity = $licenseManager->getLiveActivity($minutes);
-        echo json_encode(['success' => true, 'activity' => $activity]);
-        break;
-
-    case 'block_activation':
-        $activation_id = (int)($_POST['activation_id'] ?? 0);
-        if ($activation_id > 0) {
-            $stmt = $licenseManager->getDbConnection()->prepare("UPDATE license_activations SET status = 'blocked' WHERE id = ?");
-            $stmt->bind_param("i", $activation_id);
-            if ($stmt->execute()) {
-                echo json_encode(['success' => true, 'message' => 'Activación bloqueada']);
-            } else {
-                echo json_encode(['success' => false, 'error' => 'Error al bloquear activación']);
-                http_response_code(500);
-            }
-        } else {
-            echo json_encode(['success' => false, 'error' => 'ID de activación inválido']);
-            http_response_code(400);
-        }
-        break;
-
-    case 'clear_old_logs':
-        $days_old = 90; // Define cuántos días atrás limpiar
-        $stmt = $licenseManager->getDbConnection()->prepare("DELETE FROM license_logs WHERE created_at < NOW() - INTERVAL ? DAY");
-        $stmt->bind_param("i", $days_old);
-        if ($stmt->execute()) {
-            echo json_encode(['success' => true, 'message' => 'Logs antiguos eliminados']);
-        } else {
-            echo json_encode(['success' => false, 'error' => 'Error al eliminar logs']);
-            http_response_code(500);
-        }
-        break;
-
-    case 'get_license_verification_summary': // Este endpoint ya existía en tu `api_admin.php` pero lo mantengo aquí por completitud.
-        $license_id = (int)($_GET['license_id'] ?? 0);
-        if ($license_id > 0) {
-            // Resumen de verificaciones para una licencia específica
-            $stmt = $licenseManager->getDbConnection()->prepare("
-                SELECT 
-                    COUNT(*) as total_verifications,
-                    COUNT(CASE WHEN status = 'success' THEN 1 END) as successful_verifications,
-                    COUNT(CASE WHEN status = 'failure' THEN 1 END) as failed_verifications,
-                    MAX(created_at) as last_verification,
-                    COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR) THEN 1 END) as verifications_24h
-                FROM license_logs 
-                WHERE license_id = ? AND action = 'verification'
-            ");
-            $stmt->bind_param("i", $license_id);
-            $stmt->execute();
-            $summary = $stmt->get_result()->fetch_assoc();
-            
-            echo json_encode(['success' => true, 'summary' => $summary]);
-        } else {
-            echo json_encode(['success' => false, 'error' => 'ID de licencia inválido']);
-            http_response_code(400);
-        }
-        break;
-
+        
     default:
-        echo json_encode(['success' => false, 'error' => 'Acción inválida']);
-        http_response_code(400);
+        // Delegar a la API original para otras acciones
+        if (method_exists($licenseManager, "handleAdminRequest")) {
+            $licenseManager->handleAdminRequest();
+        } else {
+            http_response_code(400);
+            echo json_encode([
+                "success" => false,
+                "error" => "Invalid action: " . $action
+            ]);
+        }
         break;
 }
-?>

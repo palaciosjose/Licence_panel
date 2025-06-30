@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 $license_db_config = [
     'host' => 'localhost',
     'username' => 'warsup_sdcode',
-    'password' => 'warsup_sdcode', 
+    'password' => 'warsup_sdcode',
     'database' => 'warsup_sdcode'
 ];
 

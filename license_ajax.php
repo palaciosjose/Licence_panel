@@ -17,7 +17,7 @@ if (!isset($_SESSION['license_admin'])) {
 $license_db_config = [
     'host' => 'localhost',
     'username' => 'warsup_sdcode',
-    'password' => 'warsup_sdcode', 
+    'password' => 'warsup_sdcode',
     'database' => 'warsup_sdcode'
 ];
 
