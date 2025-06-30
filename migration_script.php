@@ -5,11 +5,13 @@
  */
 
 // Configuración de la base de datos
-$db_config = [
-    'host' => 'localhost',
-    'username' => 'warsup_sdcode',
-    'password' => 'warsup_sdcode',
-    'database' => 'warsup_sdcode'
+require_once 'config.php'; 
+
+$license_db_config = [
+    'host'     => DB_HOST,
+    'username' => DB_USER,
+    'password' => DB_PASS,
+    'database' => DB_NAME
 ];
 
 class LicenseMigration {

@@ -11,11 +11,13 @@ require_once __DIR__ . '/whatsapp_config.php';
 require_once __DIR__ . '/LicenseManager.class.php';
 
 // Configuración de la base de datos
+require_once 'config.php'; 
+
 $license_db_config = [
-    'host' => 'localhost',
-    'username' => 'warsup_sdcode',
-    'password' => 'warsup_sdcode',
-    'database' => 'warsup_sdcode'
+    'host'     => DB_HOST,
+    'username' => DB_USER,
+    'password' => DB_PASS,
+    'database' => DB_NAME
 ];
 
 class WhatsAppNotifier {

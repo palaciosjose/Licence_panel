@@ -1,9 +1,31 @@
-[30-Jun-2025 00:45:49 UTC] PHP Fatal error:  Uncaught ArgumentCountError: str_replace() expects at least 3 arguments, 2 given in /home/warsup/scode.warsup.shop/reparacion.php:498
+
+[30-Jun-2025 02:02:31 UTC] License API Request: {"method":"POST","action":"validate","user_agent":"License-Client\/2.0","ip":"144.91.120.244","timestamp":"2025-06-30 02:02:31","params":{"action":"validate","license_key":"LCSY-34JF-9192-9088-75ED-7A3F-FF61-EFB7","domain":"zonestore.warsup.shop","current_domain":"zonestore.warsup.shop"}}
+[30-Jun-2025 02:02:31 UTC] License API Error: Data truncated for column 'action' at row 1
+[30-Jun-2025 02:02:32 UTC] License API Request: {"method":"POST","action":"validate","user_agent":"License-Client\/2.0","ip":"144.91.120.244","timestamp":"2025-06-30 02:02:32","params":{"action":"validate","license_key":"LCSY-34JF-9192-9088-75ED-7A3F-FF61-EFB7","domain":"zonestore.warsup.shop","current_domain":"zonestore.warsup.shop"}}
+[30-Jun-2025 02:02:32 UTC] License API Error: Data truncated for column 'action' at row 1
+[30-Jun-2025 02:03:06 UTC] License API Request: {"method":"POST","action":"validate","user_agent":"License-Client\/2.0","ip":"144.91.120.244","timestamp":"2025-06-30 02:03:06","params":{"action":"validate","license_key":"LCSY-34JF-9192-9088-75ED-7A3F-FF61-EFB7","domain":"zonestore.warsup.shop","current_domain":"zonestore.warsup.shop"}}
+[30-Jun-2025 02:03:06 UTC] License API Error: Data truncated for column 'action' at row 1
+[30-Jun-2025 02:03:20 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect datetime value: '2025' for column `warsup_sdcode`.`licenses`.`start_date` at row 1 in /home/warsup/scode.warsup.shop/LicenseManager.class.php:145
 Stack trace:
-#0 /home/warsup/scode.warsup.shop/reparacion.php(498): str_replace()
-#1 {main}
-  thrown in /home/warsup/scode.warsup.shop/reparacion.php on line 498
-[30-Jun-2025 00:46:48 UTC] PHP Fatal error:  Uncaught Error: Call to undefined method LicenseManager::isLoggedIn() in /home/warsup/scode.warsup.shop/Psnel_administracion.php:45
+#0 /home/warsup/scode.warsup.shop/LicenseManager.class.php(145): mysqli_stmt->execute()
+#1 /home/warsup/scode.warsup.shop/Psnel_administracion.php(109): LicenseManager->createLicense()
+#2 {main}
+  thrown in /home/warsup/scode.warsup.shop/LicenseManager.class.php on line 145
+[30-Jun-2025 02:03:36 UTC] License API Request: {"method":"POST","action":"validate","user_agent":"License-Client\/2.0","ip":"144.91.120.244","timestamp":"2025-06-30 02:03:36","params":{"action":"validate","license_key":"LCSY-34JF-9192-9088-75ED-7A3F-FF61-EFB7","domain":"zonestore.warsup.shop","current_domain":"zonestore.warsup.shop"}}
+[30-Jun-2025 02:03:36 UTC] License API Error: Data truncated for column 'action' at row 1
+[30-Jun-2025 02:03:48 UTC] License API Request: {"method":"POST","action":"validate","user_agent":"License-Client\/2.0","ip":"144.91.120.244","timestamp":"2025-06-30 02:03:48","params":{"action":"validate","license_key":"LCSY-34JF-9192-9088-75ED-7A3F-FF61-EFB7","domain":"zonestore.warsup.shop","current_domain":"zonestore.warsup.shop"}}
+[30-Jun-2025 02:03:48 UTC] License API Error: Data truncated for column 'action' at row 1
+[30-Jun-2025 02:03:48 UTC] License API Request: {"method":"POST","action":"validate","user_agent":"License-Client\/2.0","ip":"144.91.120.244","timestamp":"2025-06-30 02:03:48","params":{"action":"validate","license_key":"LCSY-34JF-9192-9088-75ED-7A3F-FF61-EFB7","domain":"zonestore.warsup.shop","current_domain":"zonestore.warsup.shop"}}
+[30-Jun-2025 02:03:49 UTC] License API Error: Data truncated for column 'action' at row 1
+[30-Jun-2025 02:04:00 UTC] License API Request: {"method":"POST","action":"validate","user_agent":"License-Client\/2.0","ip":"144.91.120.244","timestamp":"2025-06-30 02:04:00","params":{"action":"validate","license_key":"LCSY-34JF-9192-9088-75ED-7A3F-FF61-EFB7","domain":"zonestore.warsup.shop","current_domain":"zonestore.warsup.shop"}}
+[30-Jun-2025 02:04:00 UTC] License API Error: Data truncated for column 'action' at row 1
+[30-Jun-2025 02:04:00 UTC] License API Request: {"method":"POST","action":"validate","user_agent":"License-Client\/2.0","ip":"144.91.120.244","timestamp":"2025-06-30 02:04:00","params":{"action":"validate","license_key":"LCSY-34JF-9192-9088-75ED-7A3F-FF61-EFB7","domain":"zonestore.warsup.shop","current_domain":"zonestore.warsup.shop"}}
+[30-Jun-2025 02:04:00 UTC] License API Error: Data truncated for column 'action' at row 1
+[30-Jun-2025 02:04:02 UTC] License API Request: {"method":"POST","action":"validate","user_agent":"License-Client\/2.0","ip":"144.91.120.244","timestamp":"2025-06-30 02:04:02","params":{"action":"validate","license_key":"LCSY-34JF-9192-9088-75ED-7A3F-FF61-EFB7","domain":"zonestore.warsup.shop","current_domain":"zonestore.warsup.shop"}}
+[30-Jun-2025 02:04:02 UTC] License API Error: Data truncated for column 'action' at row 1
+[30-Jun-2025 02:06:29 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Incorrect datetime value: '2025' for column `warsup_sdcode`.`licenses`.`start_date` at row 1 in /home/warsup/scode.warsup.shop/LicenseManager.class.php:142
 Stack trace:
-#0 {main}
-  thrown in /home/warsup/scode.warsup.shop/Psnel_administracion.php on line 45
+#0 /home/warsup/scode.warsup.shop/LicenseManager.class.php(142): mysqli_stmt->execute()
+#1 /home/warsup/scode.warsup.shop/Psnel_administracion.php(109): LicenseManager->createLicense()
+#2 {main}
+  thrown in /home/warsup/scode.warsup.shop/LicenseManager.class.php on line 142

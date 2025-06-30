@@ -17,11 +17,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 // Configuración de la base de datos del servidor de licencias
+require_once 'config.php'; 
+
 $license_db_config = [
-    'host' => 'localhost',
-    'username' => 'warsup_sdcode',
-    'password' => 'warsup_sdcode',
-    'database' => 'warsup_sdcode'
+    'host'     => DB_HOST,
+    'username' => DB_USER,
+    'password' => DB_PASS,
+    'database' => DB_NAME
 ];
 
 class LicenseAPI {

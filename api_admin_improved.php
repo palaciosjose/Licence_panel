@@ -85,39 +85,6 @@ if (in_array($action, $protectedActions)) {
 }
 
 // Manejar acciones
-
-    
-function calculateMemoryUsage() {
-    $memoryLimit = ini_get("memory_limit");
-    
-    // Convertir memory_limit a bytes
-    if (preg_match("/^(\d+)(.)$/", $memoryLimit, $matches)) {
-        $number = (int)$matches[1];
-        $unit = strtolower($matches[2]);
-        
-        switch ($unit) {
-            case "g": $memoryLimitBytes = $number * 1024 * 1024 * 1024; break;
-            case "m": $memoryLimitBytes = $number * 1024 * 1024; break;
-            case "k": $memoryLimitBytes = $number * 1024; break;
-            default: $memoryLimitBytes = $number; break;
-        }
-    } else {
-        $memoryLimitBytes = (int)$memoryLimit;
-    }
-    
-    $memoryUsed = memory_get_usage(true);
-    
-    // Verificar que los valores sean v谩lidos
-    if ($memoryLimitBytes <= 0 || $memoryUsed <= 0) {
-        return 0;
-    }
-    
-    $percentage = ($memoryUsed / $memoryLimitBytes) * 100;
-    
-    // Limitar a un m谩ximo de 100% para evitar valores absurdos
-    return min(100, round($percentage, 2));
-}
-
 switch ($action) {
     case "monitor":
         $health = LicenseMonitor::checkSystemHealth();
@@ -151,7 +118,7 @@ switch ($action) {
     case "system_stats":
         $stats = [
             "disk_usage" => round((1 - disk_free_space(".") / disk_total_space(".")) * 100, 2),
-            "memory_usage" => calculateMemoryUsage(),
+            "memory_usage" => round((memory_get_usage(true) / (int)ini_get("memory_limit")) * 100, 2),
             "php_version" => PHP_VERSION,
             "server_time" => date("Y-m-d H:i:s"),
             "uptime" => sys_getloadavg()
@@ -162,78 +129,6 @@ switch ($action) {
             "stats" => $stats
         ]);
         break;
-    
-    case "get_license_details":
-    $license_id = (int)($_GET['id'] ?? 0);
-    if ($license_id <= 0) {
-        http_response_code(400);
-        echo json_encode(["success" => false, "error" => "ID de licencia inválido."]);
-        exit;
-    }
-
-    // Usamos el método que ya existe en tu LicenseManager
-    $license = $licenseManager->getLicenseDetails($license_id);
-
-    if ($license) {
-        echo json_encode(["success" => true, "license" => $license]);
-    } else {
-        http_response_code(404);
-        echo json_encode(["success" => false, "error" => "Licencia no encontrada."]);
-    }
-    break;
-    
-    case "update_license":
-    $data = json_decode(file_get_contents('php://input'), true);
-
-    // **AQUÍ ESTÁ LA LÍNEA CLAVE DEL ARREGLO:**
-    // Le decimos a la API que use el valor de 'edit_license_id' como 'id'.
-    if (!empty($data['edit_license_id'])) {
-        $data['id'] = $data['edit_license_id'];
-    }
-
-    if (empty($data) || empty($data['id'])) {
-        http_response_code(400);
-        echo json_encode(["success" => false, "error" => "No se recibieron datos o falta el ID de la licencia."]);
-        exit;
-    }
-
-    $result = $licenseManager->updateLicense($data);
-
-    if ($result['success']) {
-        echo json_encode($result);
-    } else {
-        http_response_code(500);
-        echo json_encode($result);
-    }
-    break;
-    
-    case "get_activation_details":
-    $activation_id = (int)($_GET['id'] ?? 0);
-    if ($activation_id <= 0) {
-        http_response_code(400);
-        echo json_encode(["success" => false, "error" => "ID de activación inválido."]);
-        exit;
-    }
-
-    $activation = $licenseManager->getActivationDetails($activation_id);
-
-    if ($activation) {
-        echo json_encode(["success" => true, "activation" => $activation]);
-    } else {
-        http_response_code(404);
-        echo json_encode(["success" => false, "error" => "Activación no encontrada."]);
-    }
-    break;
-    
-    case "clear_old_logs":
-    $result = $licenseManager->clearOldLogs();
-    if ($result['success']) {
-        echo json_encode($result);
-    } else {
-        http_response_code(500); // Internal Server Error
-        echo json_encode($result);
-    }
-    break;
         
     default:
         // Delegar a la API original para otras acciones

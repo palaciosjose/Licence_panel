@@ -1,0 +1,385 @@
+<?php
+/**
+ * API del Servidor de Licencias - Versión Mejorada
+ * Maneja validación, activación y verificación de licencias
+ * Version: 1.3 - Con manejo robusto de errores y logs mejorados
+ */
+
+// Configuración de headers
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
+// Manejar preflight OPTIONS request
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
+// Configuración de manejo de errores
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
+// Clase para logging
+class ApiLogger {
+    private static $logFile = 'license_api.log';
+    
+    public static function log($level, $message, $context = []) {
+        $timestamp = date('Y-m-d H:i:s');
+        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+        $contextStr = $context ? ' | Context: ' . json_encode($context) : '';
+        
+        $logEntry = "[$timestamp] [$level] [IP: $ip] $message$contextStr\n";
+        @file_put_contents(self::$logFile, $logEntry, FILE_APPEND | LOCK_EX);
+    }
+    
+    public static function error($message, $context = []) {
+        self::log('ERROR', $message, $context);
+    }
+    
+    public static function info($message, $context = []) {
+        self::log('INFO', $message, $context);
+    }
+    
+    public static function warning($message, $context = []) {
+        self::log('WARNING', $message, $context);
+    }
+}
+
+// Función para manejo de errores fatales
+function handleFatalError() {
+    $error = error_get_last();
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        ApiLogger::error('Fatal Error', [
+            'message' => $error['message'],
+            'file' => $error['file'],
+            'line' => $error['line']
+        ]);
+        
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Internal server error',
+            'code' => 500
+        ]);
+    }
+}
+
+register_shutdown_function('handleFatalError');
+
+// Configuración de la base de datos con fallback
+$db_configs = [
+    [
+        'host' => 'localhost',
+        'username' => 'warsup_sdcode',
+        'password' => 'warsup_sdcode',
+        'database' => 'warsup_sdcode'
+    ],
+    [
+        'host' => 'localhost',
+        'username' => 'serverbussn_sdcode',
+        'password' => 'zOcblEcfc7mZS7x',
+        'database' => 'serverbussn_sdcode'
+    ]
+];
+
+class LicenseAPI {
+    private $conn;
+    private $api_version = '1.3';
+    private $config;
+    
+    public function __construct($db_configs) {
+        $this->initializeDatabase($db_configs);
+    }
+    
+    private function initializeDatabase($db_configs) {
+        $lastError = null;
+        
+        foreach ($db_configs as $config) {
+            try {
+                $this->conn = new mysqli(
+                    $config['host'],
+                    $config['username'],
+                    $config['password'],
+                    $config['database']
+                );
+                
+                if (!$this->conn->connect_error) {
+                    $this->conn->set_charset("utf8mb4");
+                    $this->config = $config;
+                    
+                    ApiLogger::info('Database connected successfully', [
+                        'host' => $config['host'],
+                        'database' => $config['database']
+                    ]);
+                    
+                    return;
+                }
+                
+                $lastError = $this->conn->connect_error;
+                
+            } catch (mysqli_sql_exception $e) {
+                $lastError = $e->getMessage();
+                ApiLogger::error('Database connection attempt failed', [
+                    'host' => $config['host'],
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+        
+        // Si llegamos aquí, ninguna configuración funcionó
+        ApiLogger::error('All database configurations failed', ['last_error' => $lastError]);
+        $this->sendError('Database connection failed', 500);
+    }
+    
+    public function handleRequest() {
+        try {
+            $method = $_SERVER['REQUEST_METHOD'];
+            $action = $_GET['action'] ?? $_POST['action'] ?? '';
+            
+            // Log de la petición
+            ApiLogger::info('API Request', [
+                'method' => $method,
+                'action' => $action,
+                'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown'
+            ]);
+            
+            // Verificar que la conexión sigue activa
+            if (!$this->conn || $this->conn->ping() === false) {
+                throw new Exception('Database connection lost');
+            }
+            
+            switch ($action) {
+                case 'validate':
+                    $this->validateLicense();
+                    break;
+                case 'activate':
+                    $this->activateLicense();
+                    break;
+                case 'verify':
+                    $this->verifyLicense();
+                    break;
+                case 'deactivate':
+                    $this->deactivateLicense();
+                    break;
+                case 'status':
+                    $this->getStatus();
+                    break;
+                case 'info':
+                    $this->getLicenseInfo();
+                    break;
+                case 'health':
+                    $this->healthCheck();
+                    break;
+                default:
+                    $this->sendError('Invalid action: ' . $action, 400);
+            }
+            
+        } catch (Exception $e) {
+            ApiLogger::error('Request handling error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            $this->sendError('Internal server error', 500);
+        }
+    }
+    
+    private function healthCheck() {
+        $health = [
+            'status' => 'healthy',
+            'timestamp' => date('Y-m-d H:i:s'),
+            'api_version' => $this->api_version,
+            'database' => [
+                'connected' => true,
+                'host' => $this->config['host'],
+                'database' => $this->config['database']
+            ]
+        ];
+        
+        // Verificar tablas principales
+        $tables = ['licenses', 'license_activations', 'license_logs'];
+        foreach ($tables as $table) {
+            try {
+                $result = $this->conn->query("SELECT COUNT(*) as count FROM $table LIMIT 1");
+                $health['database']['tables'][$table] = $result ? true : false;
+            } catch (Exception $e) {
+                $health['database']['tables'][$table] = false;
+                $health['status'] = 'degraded';
+            }
+        }
+        
+        $this->sendSuccess($health);
+    }
+    
+    private function validateLicense() {
+        $license_key = $this->getParam('license_key');
+        $domain = $this->getParam('domain');
+        
+        if (!$license_key || !$domain) {
+            $this->sendError('Missing required parameters: license_key, domain', 400);
+        }
+        
+        $domain = $this->cleanDomain($domain);
+        
+        try {
+            // Verificar si la licencia existe y está activa
+            $stmt = $this->conn->prepare("
+                SELECT *, 
+                       CASE 
+                           WHEN expires_at IS NULL THEN 'permanent'
+                           WHEN expires_at > NOW() THEN 'valid'
+                           ELSE 'expired'
+                       END as period_status,
+                       CASE 
+                           WHEN start_date > NOW() THEN 'pending'
+                           WHEN start_date <= NOW() AND (expires_at IS NULL OR expires_at > NOW()) THEN 'active_period'
+                           ELSE 'expired_period'
+                       END as current_period_status
+                FROM licenses 
+                WHERE license_key = ? AND status = 'active'
+            ");
+            
+            if (!$stmt) {
+                throw new Exception('Database prepare failed: ' . $this->conn->error);
+            }
+            
+            $stmt->bind_param("s", $license_key);
+            $stmt->execute();
+            $license = $stmt->get_result()->fetch_assoc();
+            
+            if (!$license) {
+                $this->logActivity(null, null, 'validation', 'failure', 'License not found or inactive', $domain);
+                $this->sendError('Invalid license key', 404);
+            }
+            
+            // Verificar período de vigencia
+            if ($license['current_period_status'] !== 'active_period') {
+                $this->logActivity($license['id'], null, 'validation', 'failure', 'License period invalid: ' . $license['current_period_status'], $domain);
+                $this->sendError('License period is not active', 403);
+            }
+            
+            // Verificar límite de dominios
+            $stmt = $this->conn->prepare("SELECT COUNT(*) as count FROM license_activations WHERE license_id = ? AND status = 'active' AND domain != ?");
+            $stmt->bind_param("is", $license['id'], $domain);
+            $stmt->execute();
+            $activations = $stmt->get_result()->fetch_assoc();
+            
+            if ($activations['count'] >= $license['max_domains']) {
+                // Verificar si este dominio ya está activado
+                $stmt = $this->conn->prepare("SELECT id FROM license_activations WHERE license_id = ? AND domain = ? AND status = 'active'");
+                $stmt->bind_param("is", $license['id'], $domain);
+                $stmt->execute();
+                $existing = $stmt->get_result()->fetch_assoc();
+                
+                if (!$existing) {
+                    $this->logActivity($license['id'], null, 'validation', 'failure', 'Domain limit exceeded', $domain);
+                    $this->sendError('Maximum domains limit reached', 403);
+                }
+            }
+            
+            $this->logActivity($license['id'], null, 'validation', 'success', 'License validated successfully', $domain);
+            
+            $this->sendSuccess([
+                'valid' => true,
+                'license_info' => [
+                    'client_name' => $license['client_name'],
+                    'product_name' => $license['product_name'],
+                    'version' => $license['version'],
+                    'expires_at' => $license['expires_at'],
+                    'period_status' => $license['period_status']
+                ]
+            ]);
+            
+        } catch (Exception $e) {
+            ApiLogger::error('License validation error', [
+                'license_key' => $license_key,
+                'domain' => $domain,
+                'error' => $e->getMessage()
+            ]);
+            
+            $this->sendError('Validation failed', 500);
+        }
+    }
+    
+    // Métodos auxiliares
+    private function getParam($name, $default = null) {
+        return $_GET[$name] ?? $_POST[$name] ?? $default;
+    }
+    
+    private function cleanDomain($domain) {
+        $domain = strtolower(trim($domain));
+        $domain = preg_replace('/^https?:\/\//', '', $domain);
+        $domain = preg_replace('/^www\./', '', $domain);
+        $domain = rtrim($domain, '/');
+        return $domain;
+    }
+    
+    private function logActivity($license_id, $activation_id, $action, $status, $message, $domain = null) {
+        try {
+            $stmt = $this->conn->prepare("
+                INSERT INTO license_logs (license_id, activation_id, action, status, message, ip_address, user_agent, request_data) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            
+            $ip = $_SERVER['REMOTE_ADDR'] ?? null;
+            $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? null;
+            $request_data = json_encode([
+                'domain' => $domain,
+                'timestamp' => date('Y-m-d H:i:s'),
+                'method' => $_SERVER['REQUEST_METHOD']
+            ]);
+            
+            $stmt->bind_param("iissssss", $license_id, $activation_id, $action, $status, $message, $ip, $user_agent, $request_data);
+            $stmt->execute();
+            
+        } catch (Exception $e) {
+            ApiLogger::error('Failed to log activity', [
+                'error' => $e->getMessage(),
+                'license_id' => $license_id,
+                'action' => $action
+            ]);
+        }
+    }
+    
+    private function sendSuccess($data) {
+        echo json_encode(['success' => true] + $data);
+        exit;
+    }
+    
+    private function sendError($message, $code = 400) {
+        http_response_code($code);
+        echo json_encode([
+            'success' => false,
+            'error' => $message,
+            'code' => $code
+        ]);
+        exit;
+    }
+    
+    // Implementar otros métodos como activateLicense(), verifyLicense(), etc.
+    // siguiendo el mismo patrón de manejo de errores robusto
+}
+
+// Punto de entrada principal
+try {
+    $api = new LicenseAPI($db_configs);
+    $api->handleRequest();
+    
+} catch (Exception $e) {
+    ApiLogger::error('API initialization failed', [
+        'message' => $e->getMessage(),
+        'trace' => $e->getTraceAsString()
+    ]);
+    
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Service temporarily unavailable',
+        'code' => 500
+    ]);
+}
+?>

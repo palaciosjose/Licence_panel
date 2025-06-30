@@ -14,13 +14,14 @@ if (!isset($_SESSION['license_admin'])) {
 }
 
 // Configuración de la base de datos
-$license_db_config = [
-    'host' => 'localhost',
-    'username' => 'warsup_sdcode',
-    'password' => 'warsup_sdcode',
-    'database' => 'warsup_sdcode'
-];
+require_once 'config.php'; 
 
+$license_db_config = [
+    'host'     => DB_HOST,
+    'username' => DB_USER,
+    'password' => DB_PASS,
+    'database' => DB_NAME
+];
 // Incluir la clase LicenseManager y la configuración de WhatsApp
 require_once 'LicenseManager.class.php';
 require_once 'whatsapp_config.php'; // Asegúrate de que este archivo exista y esté bien configurado

@@ -7,11 +7,13 @@
 session_start();
 
 // Configuración de la base de datos del servidor de licencias
+require_once 'config.php'; 
+
 $license_db_config = [
-    'host' => 'localhost',
-    'username' => 'warsup_sdcode',
-    'password' => 'warsup_sdcode',
-    'database' => 'warsup_sdcode'
+    'host'     => DB_HOST,
+    'username' => DB_USER,
+    'password' => DB_PASS,
+    'database' => DB_NAME
 ];
 
 require_once 'whatsapp_config.php';
@@ -107,7 +109,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = $licenseManager->createLicense($_POST);
         if ($result['success']) {
             $success_message = "Licencia creada exitosamente. Clave: " . $result['license_key'];
-            if ($result['expires_at']) {
+            // Comprobamos si la clave 'expires_at' existe y no está vacía
+            if (!empty($result['expires_at'])) { 
                 $success_message .= "<br>Válida desde: " . date('d/m/Y', strtotime($result['start_date']));
                 $success_message .= "<br>Expira: " . date('d/m/Y', strtotime($result['expires_at']));
             }
