@@ -163,15 +163,39 @@ switch ($action) {
         ]);
         break;
     
+    case "get_verification_stats":
+        $stats = $licenseManager->getVerificationStats();
+        echo json_encode(["success" => true, "stats" => $stats]);
+        break;
+
+    case "get_recent_verifications":
+        $limit = (int)($_GET['limit'] ?? 50);
+        $status_filter = $_GET['status_filter'] ?? null;
+        $verifications = $licenseManager->getRecentVerifications($limit, $status_filter);
+        echo json_encode(["success" => true, "verifications" => $verifications]);
+        break;
+
+    case "get_live_activity":
+        $minutes = (int)($_GET['minutes'] ?? 5);
+        $activity = $licenseManager->getLiveActivity($minutes);
+        echo json_encode(["success" => true, "activity" => $activity]);
+        break;
+
+    case "get_activations":
+        $license_id = isset($_GET['license_id']) ? (int)$_GET['license_id'] : null;
+        $limit = (int)($_GET['limit'] ?? 100);
+        $activations = $licenseManager->getActivations($license_id, $limit);
+        echo json_encode(["success" => true, "activations" => $activations]);
+        break;
     case "get_license_details":
     $license_id = (int)($_GET['id'] ?? 0);
     if ($license_id <= 0) {
         http_response_code(400);
-        echo json_encode(["success" => false, "error" => "ID de licencia inválido."]);
+        echo json_encode(["success" => false, "error" => "ID de licencia invlido."]);
         exit;
     }
 
-    // Usamos el método que ya existe en tu LicenseManager
+    // Usamos el mtodo que ya existe en tu LicenseManager
     $license = $licenseManager->getLicenseDetails($license_id);
 
     if ($license) {
@@ -185,7 +209,7 @@ switch ($action) {
     case "update_license":
     $data = json_decode(file_get_contents('php://input'), true);
 
-    // **AQUÍ ESTÁ LA LÍNEA CLAVE DEL ARREGLO:**
+    // **AQU01 EST09 LA L01NEA CLAVE DEL ARREGLO:**
     // Le decimos a la API que use el valor de 'edit_license_id' como 'id'.
     if (!empty($data['edit_license_id'])) {
         $data['id'] = $data['edit_license_id'];
@@ -211,7 +235,7 @@ switch ($action) {
     $activation_id = (int)($_GET['id'] ?? 0);
     if ($activation_id <= 0) {
         http_response_code(400);
-        echo json_encode(["success" => false, "error" => "ID de activación inválido."]);
+        echo json_encode(["success" => false, "error" => "ID de activacin invlido."]);
         exit;
     }
 
@@ -221,7 +245,7 @@ switch ($action) {
         echo json_encode(["success" => true, "activation" => $activation]);
     } else {
         http_response_code(404);
-        echo json_encode(["success" => false, "error" => "Activación no encontrada."]);
+        echo json_encode(["success" => false, "error" => "Activacin no encontrada."]);
     }
     break;
     
