@@ -53,14 +53,15 @@ if (!$licenseManager->isLoggedIn()) {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Servidor de Licencias - Login</title>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/flatly/bootstrap.min.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <link rel="stylesheet" href="assets/css/custom.css">
         <style>
-            body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
-            .login-card { background: rgba(255, 255, 255, 0.95); border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+            body { min-height: 100vh; }
+            .login-card { border-radius: 0.75rem; }
         </style>
     </head>
-    <body class="d-flex align-items-center justify-content-center">
+    <body class="bg-gradient d-flex align-items-center justify-content-center">
         <div class="login-card p-4" style="width: 100%; max-width: 400px;">
             <div class="text-center mb-4">
                 <i class="fas fa-key fa-3x text-primary mb-3"></i>
@@ -227,20 +228,21 @@ $current_tab = $_GET['tab'] ?? 'dashboard';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Servidor de Licencias - Panel de Administración v1.1</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/flatly/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/custom.css">
     <style>
-        .sidebar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .sidebar { background: #0d6efd; min-height: 100vh; }
         .nav-link { color: rgba(255,255,255,0.8) !important; }
         .nav-link:hover, .nav-link.active { color: white !important; background: rgba(255,255,255,0.1); }
-        .stat-card { border-left: 4px solid #667eea; }
+        .stat-card { border-left: 4px solid #0d6efd; }
         .table-actions { white-space: nowrap; }
         .license-status-active { background-color: #d4edda; }
         .license-status-expired { background-color: #f8d7da; }
         .license-status-expiring { background-color: #fff3cd; }
     </style>
 </head>
-<body>
+<body class="bg-gradient">
     <div class="container-fluid">
         <div class="row">
             <div class="col-md-3 col-lg-2 px-0">
