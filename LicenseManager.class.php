@@ -137,7 +137,8 @@ class LicenseManager {
 
         $sql = "INSERT INTO licenses (license_key, client_name, client_email, client_phone, product_name, version, license_type, max_domains, notes, start_date, duration_days, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("sssssssisiss", $license_key, $client_name, $client_email, $client_phone, $product_name, $version, $license_type, $max_domains, $notes, $start_date, $duration_days, $expires_at);
+        // Correct type binding: start_date is a string and duration_days is integer
+        $stmt->bind_param("sssssssissis", $license_key, $client_name, $client_email, $client_phone, $product_name, $version, $license_type, $max_domains, $notes, $start_date, $duration_days, $expires_at);
 
         if ($stmt->execute()) {
             return ['success' => true, 'license_key' => $license_key, 'start_date' => $start_date, 'expires_at' => $expires_at];
