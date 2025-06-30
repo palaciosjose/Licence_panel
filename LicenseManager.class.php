@@ -217,6 +217,81 @@ class LicenseManager {
         return $activation;
     }
 
+    // ===========================================
+    // MÉTODOS PARA EL DASHBOARD DE VERIFICACIONES
+    // ===========================================
+
+    /**
+     * Obtiene estadísticas agregadas de verificaciones.
+     * @return array
+     */
+    public function getVerificationStats() {
+        $sql = "
+            SELECT
+                COUNT(*) as total_verifications,
+                COUNT(CASE WHEN created_at >= NOW() - INTERVAL 1 HOUR THEN 1 END) as verifications_1h,
+                COUNT(CASE WHEN created_at >= NOW() - INTERVAL 24 HOUR THEN 1 END) as verifications_24h,
+                COUNT(CASE WHEN created_at >= NOW() - INTERVAL 7 DAY THEN 1 END) as verifications_7d
+            FROM license_logs
+            WHERE action = 'verification'";
+        $result = $this->conn->query($sql);
+        return $result->fetch_assoc();
+    }
+
+    /**
+     * Obtiene una lista de verificaciones recientes con detalles de licencia y activación.
+     * @param int $limit Número máximo de registros a retornar.
+     * @param string|null $status_filter Filtra por 'success' o 'failure'.
+     * @return array
+     */
+    public function getRecentVerifications($limit = 50, $status_filter = null) {
+        $sql = "
+            SELECT ll.*, l.client_name, l.client_phone, la.domain
+            FROM license_logs ll
+            LEFT JOIN licenses l ON ll.license_id = l.id
+            LEFT JOIN license_activations la ON ll.activation_id = la.id
+            WHERE ll.action = 'verification'";
+
+        $params = [];
+        $types = '';
+        if ($status_filter) {
+            $sql .= " AND ll.status = ?";
+            $params[] = $status_filter;
+            $types .= 's';
+        }
+
+        $sql .= " ORDER BY ll.created_at DESC LIMIT ?";
+        $params[] = $limit;
+        $types .= 'i';
+
+        $stmt = $this->conn->prepare($sql);
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+        $stmt->execute();
+        return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    }
+
+    /**
+     * Obtiene la actividad en un período reciente de tiempo (ej. últimos minutos).
+     * @param int $minutes Duración en minutos hacia atrás.
+     * @return array
+     */
+    public function getLiveActivity($minutes = 5) {
+        $sql = "
+            SELECT ll.*, l.client_name, l.client_phone, la.domain
+            FROM license_logs ll
+            LEFT JOIN licenses l ON ll.license_id = l.id
+            LEFT JOIN license_activations la ON ll.activation_id = la.id
+            WHERE ll.created_at >= NOW() - INTERVAL ? MINUTE
+            ORDER BY ll.created_at DESC
+            LIMIT 20";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param('i', $minutes);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    }
+
     public function clearOldLogs() {
         $days_old = 90;
         $sql = "DELETE FROM license_logs WHERE created_at < NOW() - INTERVAL ? DAY";
