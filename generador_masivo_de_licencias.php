@@ -177,11 +177,12 @@ if ($current_action === 'export' && isset($generated_licenses)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generador Masivo de Licencias v1.1</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/flatly/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/custom.css">
     <style>
-        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
-        .generator-card { background: rgba(255, 255, 255, 0.95); border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        body { min-height: 100vh; }
+        .generator-card { border-radius: 1rem; }
         .license-key { font-family: 'Courier New', monospace; font-size: 0.9rem; }
         .progress-container { display: none; }
         .period-preview { background: #f8f9fa; border-radius: 8px; padding: 15px; margin-top: 10px; }
@@ -196,7 +197,7 @@ if ($current_action === 'export' && isset($generated_licenses)) {
         }
     </style>
 </head>
-<body class="py-4">
+<body class="bg-gradient py-4">
     <div class="container">
         <div class="text-center mb-4">
             <div class="generator-card p-4 mx-auto" style="max-width: 600px;">

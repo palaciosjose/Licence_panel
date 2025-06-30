@@ -1,0 +1,15 @@
+/* Global custom styles for a cleaner professional look */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.bg-gradient {
+    background: linear-gradient(135deg, #0062E6, #33AEFF);
+}
+
+.card-glass {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 0.75rem;
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+}

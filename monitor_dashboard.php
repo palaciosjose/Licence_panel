@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monitor del Sistema de Licencias</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/flatly/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/custom.css">
     <style>
         .status-healthy { color: #28a745; }
         .status-warning { color: #ffc107; }
@@ -18,7 +19,7 @@
         .auto-refresh { background: linear-gradient(45deg, #007bff, #0056b3); }
     </style>
 </head>
-<body class="bg-light">
+<body class="bg-gradient">
     <div class="container-fluid py-4">
         <div class="row mb-4">
             <div class="col-12">

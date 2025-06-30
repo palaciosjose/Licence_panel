@@ -124,26 +124,22 @@ if (strpos($query_string, 'action=') !== false ||
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Servidor de Licencias - Sistema de Códigos</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/flatly/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/custom.css">
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
         .welcome-card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            backdrop-filter: blur(10px);
+            border-radius: 1rem;
         }
         
         .feature-icon {
             width: 60px;
             height: 60px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: #0d6efd;
             border-radius: 15px;
             display: flex;
             align-items: center;
@@ -168,20 +164,20 @@ if (strpos($query_string, 'action=') !== false ||
         }
         
         .btn-gradient {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: #0d6efd;
             border: none;
-            color: white;
+            color: #fff;
         }
-        
+
         .btn-gradient:hover {
-            background: linear-gradient(135deg, #5a67d8, #6b46c1);
-            color: white;
+            background: #025ce2;
+            color: #fff;
             transform: translateY(-2px);
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         }
     </style>
 </head>
-<body>
+<body class="bg-gradient">
     <div class="container-fluid d-flex align-items-center justify-content-center min-vh-100 py-4">
         <div class="welcome-card p-5" style="max-width: 800px; width: 100%;">
             
