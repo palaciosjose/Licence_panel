@@ -53,7 +53,8 @@ if (!$licenseManager->isLoggedIn()) {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Servidor de Licencias - Login</title>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/flatly/bootstrap.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+        <link rel="stylesheet" href="assets/ewebot/ewebot.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         <link rel="stylesheet" href="assets/css/custom.css">
         <style>
@@ -61,8 +62,9 @@ if (!$licenseManager->isLoggedIn()) {
             .login-card { border-radius: 0.75rem; }
         </style>
     </head>
-    <body class="bg-gradient d-flex align-items-center justify-content-center">
-        <div class="login-card p-4" style="width: 100%; max-width: 400px;">
+    <body class="bg-gradient ewebot-theme d-flex align-items-center justify-content-center">
+        <header class="ewebot-header w-100 text-center mb-4"><div class="container"><span class="h5 mb-0">Panel de Administración</span></div></header>
+        <div class="login-card ewebot-card p-4" style="width: 100%; max-width: 400px;">
             <div class="text-center mb-4">
                 <i class="fas fa-key fa-3x text-primary mb-3"></i>
                 <h2>Servidor de Licencias</h2>
@@ -93,7 +95,7 @@ if (!$licenseManager->isLoggedIn()) {
                     </div>
                 </div>
                 
-                <button type="submit" name="login" class="btn btn-primary w-100">
+                <button type="submit" name="login" class="btn ewebot-btn-primary w-100">
                     <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
                 </button>
             </form>
@@ -228,7 +230,8 @@ $current_tab = $_GET['tab'] ?? 'dashboard';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Servidor de Licencias - Panel de Administración v1.1</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/flatly/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/ewebot/ewebot.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="assets/css/custom.css">
     <style>
@@ -242,7 +245,8 @@ $current_tab = $_GET['tab'] ?? 'dashboard';
         .license-status-expiring { background-color: #fff3cd; }
     </style>
 </head>
-<body class="bg-gradient">
+<body class="bg-gradient ewebot-theme">
+    <header class="ewebot-header"><div class="container"><span class="h5 mb-0">Panel de Administración</span></div></header>
     <div class="container-fluid">
         <div class="row">
             <div class="col-md-3 col-lg-2 px-0">
@@ -391,7 +395,7 @@ $current_tab = $_GET['tab'] ?? 'dashboard';
                         
                         <div class="row">
                             <div class="col-lg-8 mb-4">
-                                <div class="card">
+                                <div class="card ewebot-card">
                                     <div class="card-header">
                                         <h5 class="mb-0"><i class="fas fa-certificate me-2"></i>Licencias Recientes</h5>
                                     </div>
@@ -455,7 +459,7 @@ $current_tab = $_GET['tab'] ?? 'dashboard';
                             </div>
                             
                             <div class="col-lg-4 mb-4">
-                                <div class="card">
+                                <div class="card ewebot-card">
                                     <div class="card-header">
                                         <h5 class="mb-0"><i class="fas fa-list-alt me-2"></i>Actividad Reciente</h5>
                                     </div>
@@ -491,12 +495,12 @@ $current_tab = $_GET['tab'] ?? 'dashboard';
                     <?php if ($current_tab === 'licenses'): ?>
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h2><i class="fas fa-certificate me-2"></i>Gestión de Licencias</h2>
-                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createLicenseModal">
+                            <button class="btn ewebot-btn-primary" data-bs-toggle="modal" data-bs-target="#createLicenseModal">
                                 <i class="fas fa-plus me-2"></i>Nueva Licencia
                             </button>
                         </div>
                         
-                        <div class="card">
+                        <div class="card ewebot-card">
                             <div class="card-body">
                                 <div class="table-responsive">
                                     <table class="table table-hover">
@@ -600,7 +604,7 @@ $current_tab = $_GET['tab'] ?? 'dashboard';
                             <h2><i class="fas fa-exclamation-triangle me-2"></i>Licencias por Expirar</h2>
                         </div>
                         
-                        <div class="card">
+                        <div class="card ewebot-card">
                             <div class="card-body">
                                 <?php if (!empty($expiring_licenses)): ?>
                                     <div class="table-responsive">
@@ -680,7 +684,7 @@ $current_tab = $_GET['tab'] ?? 'dashboard';
                         $activations = $licenseManager->getActivations($license_filter);
                         ?>
                         
-                        <div class="card">
+                        <div class="card ewebot-card">
                             <div class="card-body">
                                 <div class="table-responsive">
                                     <table class="table table-hover">
@@ -810,7 +814,7 @@ $current_tab = $_GET['tab'] ?? 'dashboard';
                                         <input type="text" class="form-control" name="search" placeholder="Buscar en logs..." value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
                                     </div>
                                     <div class="col-md-2">
-                                        <button type="submit" class="btn btn-primary w-100">
+                                        <button type="submit" class="btn ewebot-btn-primary w-100">
                                             <i class="fas fa-search"></i> Filtrar
                                         </button>
                                     </div>
@@ -818,7 +822,7 @@ $current_tab = $_GET['tab'] ?? 'dashboard';
                             </div>
                         </div>
                         
-                        <div class="card">
+                        <div class="card ewebot-card">
                             <div class="card-body">
                                 <div class="table-responsive">
                                     <table class="table table-hover table-sm">
@@ -943,7 +947,7 @@ $current_tab = $_GET['tab'] ?? 'dashboard';
                         
                         <div class="row mb-4">
                             <div class="col-md-6">
-                                <div class="card">
+                                <div class="card ewebot-card">
                                     <div class="card-header d-flex justify-content-between align-items-center">
                                         <h5 class="mb-0">
                                             <i class="fas fa-circle-notch fa-spin me-2"></i>Actividad en Tiempo Real
@@ -961,7 +965,7 @@ $current_tab = $_GET['tab'] ?? 'dashboard';
                             </div>
                             
                             <div class="col-md-6">
-                                <div class="card">
+                                <div class="card ewebot-card">
                                     <div class="card-header">
                                         <h5 class="mb-0">
                                             <i class="fas fa-chart-line me-2"></i>Estado de Activaciones
@@ -990,7 +994,7 @@ $current_tab = $_GET['tab'] ?? 'dashboard';
                             </div>
                         </div>
                         
-                        <div class="card">
+                        <div class="card ewebot-card">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0">
                                     <i class="fas fa-history me-2"></i>Historial de Verificaciones
@@ -1490,7 +1494,7 @@ $current_tab = $_GET['tab'] ?? 'dashboard';
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" name="create_license" class="btn btn-primary">
+                        <button type="submit" name="create_license" class="btn ewebot-btn-primary">
                             <i class="fas fa-save me-2"></i>Crear Licencia
                         </button>
                     </div>
@@ -1631,7 +1635,7 @@ $current_tab = $_GET['tab'] ?? 'dashboard';
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" name="update_license" class="btn btn-primary">
+                        <button type="submit" name="update_license" class="btn ewebot-btn-primary">
                             <i class="fas fa-save me-2"></i>Actualizar Licencia
                         </button>
                     </div>
@@ -1673,7 +1677,7 @@ $current_tab = $_GET['tab'] ?? 'dashboard';
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" name="update_period" class="btn btn-primary">
+                        <button type="submit" name="update_period" class="btn ewebot-btn-primary">
                             <i class="fas fa-save me-2"></i>Actualizar Período
                         </button>
                     </div>
@@ -1683,6 +1687,7 @@ $current_tab = $_GET['tab'] ?? 'dashboard';
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/ewebot/ewebot.js"></script>
     <script>
         // Manejar duración personalizada en el modal de creación
         document.getElementById('duration_days').addEventListener('change', function() {

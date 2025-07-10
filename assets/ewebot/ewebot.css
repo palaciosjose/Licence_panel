@@ -1,0 +1,31 @@
+/* Minimal Ewebot theme */
+body.ewebot-theme {
+    font-family: 'Poppins', sans-serif;
+    background-color: #fdfdfd;
+    color: #333;
+}
+.ewebot-header {
+    background: #1a1e3d;
+    color: #fff;
+    padding: 1rem 0;
+}
+.ewebot-header a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: bold;
+}
+.ewebot-card {
+    border: 1px solid #e9ecef;
+    border-radius: .75rem;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.ewebot-btn {
+    background: #ff6600;
+    border-color: #ff6600;
+    color: #fff;
+}
+.ewebot-btn:hover {
+    background: #ff8533;
+    border-color: #ff8533;
+}

@@ -13,3 +13,22 @@ body {
     border-radius: 0.75rem;
     box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
 }
+
+/* Ewebot theme overrides */
+body.ewebot-theme {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #6e1fff, #3e8eeb);
+    color: #212529;
+}
+.ewebot-card {
+    background-color: #ffffff;
+}
+.ewebot-btn-primary {
+    background-color: #ff6600;
+    border-color: #ff6600;
+    color: #fff;
+}
+.ewebot-btn-primary:hover {
+    background-color: #ff8533;
+    border-color: #ff8533;
+}

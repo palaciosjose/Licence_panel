@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monitor del Sistema de Licencias</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/flatly/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/ewebot/ewebot.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="assets/css/custom.css">
     <style>
@@ -19,14 +20,15 @@
         .auto-refresh { background: linear-gradient(45deg, #007bff, #0056b3); }
     </style>
 </head>
-<body class="bg-gradient">
+<body class="bg-gradient ewebot-theme">
+    <header class="ewebot-header"><div class="container"><span class="h5 mb-0">Monitor de Sistema</span></div></header>
     <div class="container-fluid py-4">
         <div class="row mb-4">
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center">
                     <h1><i class="fas fa-heartbeat me-2"></i>Monitor del Sistema de Licencias</h1>
                     <div>
-                        <button class="btn btn-primary me-2" onclick="toggleAutoRefresh()">
+                        <button class="btn ewebot-btn-primary me-2" onclick="toggleAutoRefresh()">
                             <i class="fas fa-sync" id="refreshIcon"></i>
                             <span id="refreshText">Auto-refresh OFF</span>
                         </button>
@@ -41,7 +43,7 @@
         <!-- Estado General -->
         <div class="row mb-4">
             <div class="col-md-3">
-                <div class="card metric-card">
+                <div class="card metric-card ewebot-card">
                     <div class="card-body text-center">
                         <i class="fas fa-server fa-2x mb-2" id="systemStatusIcon"></i>
                         <h5>Estado del Sistema</h5>
@@ -50,7 +52,7 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card metric-card">
+                <div class="card metric-card ewebot-card">
                     <div class="card-body text-center">
                         <i class="fas fa-hdd fa-2x mb-2 text-info"></i>
                         <h5>Uso de Disco</h5>
@@ -59,7 +61,7 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card metric-card">
+                <div class="card metric-card ewebot-card">
                     <div class="card-body text-center">
                         <i class="fas fa-memory fa-2x mb-2 text-warning"></i>
                         <h5>Uso de Memoria</h5>
@@ -68,7 +70,7 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card metric-card">
+                <div class="card metric-card ewebot-card">
                     <div class="card-body text-center">
                         <i class="fas fa-database fa-2x mb-2 text-success"></i>
                         <h5>Base de Datos</h5>
@@ -81,7 +83,7 @@
         <!-- Rate Limiting -->
         <div class="row mb-4">
             <div class="col-md-6">
-                <div class="card">
+                <div class="card ewebot-card">
                     <div class="card-header">
                         <h5><i class="fas fa-shield-alt me-2"></i>Rate Limiting</h5>
                     </div>
@@ -91,7 +93,7 @@
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="card">
+                <div class="card ewebot-card">
                     <div class="card-header">
                         <h5><i class="fas fa-chart-line me-2"></i>Estadísticas de API</h5>
                     </div>
@@ -105,7 +107,7 @@
         <!-- Alertas -->
         <div class="row">
             <div class="col-12">
-                <div class="card">
+                <div class="card ewebot-card">
                     <div class="card-header">
                         <h5><i class="fas fa-exclamation-triangle me-2"></i>Alertas Recientes</h5>
                     </div>
@@ -245,7 +247,7 @@
                 text.textContent = "Auto-refresh ON";
             } else {
                 clearInterval(refreshInterval);
-                button.className = "btn btn-primary me-2";
+                button.className = "btn ewebot-btn-primary me-2";
                 icon.className = "fas fa-sync";
                 text.textContent = "Auto-refresh OFF";
             }
@@ -258,8 +260,8 @@
         setInterval(() => {
             if (!autoRefreshEnabled) {
                 refreshData();
-            }
-        }, 60000);
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/ewebot/ewebot.js"></script>
 </body>
 </html>

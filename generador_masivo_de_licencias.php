@@ -177,7 +177,8 @@ if ($current_action === 'export' && isset($generated_licenses)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generador Masivo de Licencias v1.1</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/flatly/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/ewebot/ewebot.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="assets/css/custom.css">
     <style>
@@ -197,10 +198,11 @@ if ($current_action === 'export' && isset($generated_licenses)) {
         }
     </style>
 </head>
-<body class="bg-gradient py-4">
+<body class="bg-gradient ewebot-theme py-4">
+    <header class="ewebot-header"><div class="container"><span class="h5 mb-0">Generador de Licencias</span></div></header>
     <div class="container">
         <div class="text-center mb-4">
-            <div class="generator-card p-4 mx-auto" style="max-width: 600px;">
+            <div class="generator-card ewebot-card p-4 mx-auto" style="max-width: 600px;">
                 <i class="fas fa-magic fa-3x text-primary mb-3"></i>
                 <h1 class="h2 text-dark">Generador Masivo de Licencias</h1>
                 <p class="text-muted">Crea múltiples licencias de forma automática con períodos personalizados</p>
@@ -213,7 +215,7 @@ if ($current_action === 'export' && isset($generated_licenses)) {
         </div>
 
         <?php if ($current_action === 'form'): ?>
-            <div class="generator-card p-4 mx-auto" style="max-width: 1000px;">
+            <div class="generator-card ewebot-card p-4 mx-auto" style="max-width: 1000px;">
                 <form method="POST" id="bulkForm">
                     <div class="row">
                         <div class="col-md-6">
@@ -391,7 +393,7 @@ if ($current_action === 'export' && isset($generated_licenses)) {
             </div>
             
         <?php elseif ($current_action === 'results'): ?>
-            <div class="generator-card p-4 mx-auto" style="max-width: 1200px;">
+            <div class="generator-card ewebot-card p-4 mx-auto" style="max-width: 1200px;">
                 <div class="text-center mb-4">
                     <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
                     <h2 class="text-success">¡Generación Completada!</h2>
@@ -479,7 +481,7 @@ if ($current_action === 'export' && isset($generated_licenses)) {
                         <a href="?action=export" class="btn btn-success">
                             <i class="fas fa-download me-2"></i>Exportar CSV
                         </a>
-                        <a href="Psnel_administracion.php?tab=licenses" class="btn btn-primary">
+                        <a href="Psnel_administracion.php?tab=licenses" class="btn ewebot-btn-primary">
                             <i class="fas fa-list me-2"></i>Ver en Panel Admin
                         </a>
                         <a href="?" class="btn btn-secondary">
@@ -557,6 +559,7 @@ if ($current_action === 'export' && isset($generated_licenses)) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+    <script src="assets/ewebot/ewebot.js"></script>
         // Manejar duración personalizada
         document.getElementById('duration_days').addEventListener('change', function() {
             const customContainer = document.getElementById('custom_duration_container');
