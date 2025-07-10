@@ -1,8 +1,8 @@
+#!/usr/bin/env php
+<?php
 // =====================================================================
 // ARCHIVO 2: whatsapp_notifier.php (para cron job)
 // =====================================================================
-
-<?php
 // Configurar zona horaria
 date_default_timezone_set('America/Bogota');
 

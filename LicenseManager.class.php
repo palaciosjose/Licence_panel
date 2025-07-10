@@ -234,6 +234,29 @@ class LicenseManager {
         return ['success' => false, 'error' => $this->conn->error];
     }
 
+    public function updateLicenseStatus($license_id, $status) {
+        // Obtener datos antes del cambio para notificación
+        $old_license = $this->getLicenseDetails($license_id);
+
+        $stmt = $this->conn->prepare("UPDATE licenses SET status = ? WHERE id = ?");
+        $stmt->bind_param("si", $status, $license_id);
+
+        if ($stmt->execute() && $old_license) {
+            if ($old_license['status'] !== $status && !empty($old_license['client_phone'])) {
+                $this->sendWhatsAppNotification('status_changed', [
+                    'client_name'   => $old_license['client_name'],
+                    'client_phone'  => $old_license['client_phone'],
+                    'old_status'    => $old_license['status'],
+                    'new_status'    => $status,
+                    'license_key'   => $old_license['license_key'],
+                    'product_name'  => $old_license['product_name'] ?? 'Sistema de Códigos'
+                ]);
+            }
+            return true;
+        }
+        return false;
+    }
+
     public function getActivationDetails($activation_id) {
         if (empty($activation_id) || !is_numeric($activation_id)) return null;
         $sql = "SELECT la.*, l.license_key, l.client_name, l.product_name, l.version, l.expires_at FROM license_activations la JOIN licenses l ON la.license_id = l.id WHERE la.id = ?";
@@ -323,6 +346,282 @@ class LicenseManager {
         $stmt->bind_param('i', $minutes);
         $stmt->execute();
         return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    }
+
+    // =============================
+    // MÉTODOS PARA WHATSAPP WHATICKET
+    // =============================
+
+    public function sendWhatsAppNotification($type, $data) {
+        if (!$this->whatsapp_config || !isset($this->whatsapp_config['enabled']) || !$this->whatsapp_config['enabled'] || empty($data['client_phone'])) {
+            error_log("WhatsApp Notification Skipped: Config disabled or missing phone for type: $type");
+            return false;
+        }
+
+        $phone = $this->cleanPhoneNumber($data['client_phone']);
+        if (!$phone) {
+            error_log("WhatsApp Notification Skipped: Invalid phone number for type: $type, Original: " . ($data['client_phone'] ?? 'N/A'));
+            return false;
+        }
+
+        $message = $this->getWhatsAppMessage($type, $data);
+        if (!$message) {
+            error_log("WhatsApp Notification Skipped: Message template not found or data incomplete for type: $type");
+            return false;
+        }
+
+        return $this->sendWhatsAppMessage($phone, $message, $type);
+    }
+
+    private function sendWhatsAppMessage($phone, $message, $type = 'notification') {
+        if (!$this->whatsapp_config || !isset($this->whatsapp_config['enabled']) || !$this->whatsapp_config['enabled']) {
+            return false;
+        }
+
+        $clean_phone = $this->cleanPhoneNumber($phone);
+        if (!$clean_phone) {
+            $this->logWhatsAppSend($phone, $message, $type, 0, 'Invalid phone number after cleaning');
+            return false;
+        }
+
+        $payload = [
+            'number'        => $clean_phone,
+            'body'          => $message,
+            'userId'        => $this->whatsapp_config['userId'] ?? '',
+            'queueId'       => $this->whatsapp_config['queueId'] ?? '',
+            'sendSignature' => $this->whatsapp_config['sendSignature'] ?? false,
+            'closeTicket'   => $this->whatsapp_config['closeTicket'] ?? false
+        ];
+
+        $headers = [
+            'Authorization: Bearer ' . $this->whatsapp_config['token'],
+            'Content-Type: application/json',
+            'Accept: application/json'
+        ];
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $this->whatsapp_config['endpoint'],
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => $this->whatsapp_config['timeout'] ?? 30,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_VERBOSE => false
+        ]);
+
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curl_error = curl_error($ch);
+        curl_close($ch);
+
+        $log_response_detail = json_decode($response, true) ?? $response;
+        $this->logWhatsAppSend($clean_phone, $message, $type, $http_code, print_r($log_response_detail, true));
+
+        $success = ($http_code >= 200 && $http_code < 300);
+
+        if (!$success) {
+            error_log("WhatsApp Error - Type: $type, Phone: $clean_phone, Code: $http_code, Response: " . print_r($log_response_detail, true));
+        }
+
+        return $success;
+    }
+
+    private function cleanPhoneNumber($phone) {
+        if (empty($phone)) {
+            return false;
+        }
+
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+
+        if (strlen($phone) === 10 && !str_starts_with($phone, '57')) {
+            $phone = '57' . $phone;
+        }
+        if (strlen($phone) === 13 && str_starts_with($phone, '57')) {
+            if (substr($phone, 2, 1) === '0') {
+                $phone = '57' . substr($phone, 3);
+            }
+        }
+
+        if (strlen($phone) === 12 && str_starts_with($phone, '57')) {
+            return $phone;
+        }
+
+        return false;
+    }
+
+    private function getWhatsAppMessage($type, $data) {
+        $company = $this->whatsapp_config['company_name'] ?? 'Sistema de Códigos';
+        $support = $this->whatsapp_config['support_phone'] ?? '';
+
+        $templates = [
+            'license_created' =>
+                "🎉 *¡Licencia Activada!*\n\n" .
+                "Hola *{client_name}*,\n\n" .
+                "Tu licencia de {company} ha sido activada exitosamente:\n\n" .
+                "🔑 *Clave de Licencia:*\n`{license_key}`\n\n" .
+                "📅 *Válida hasta:* {expires_date}\n" .
+                "🏢 *Producto:* {product_name}\n\n" .
+                "✅ Ya puedes utilizar tu licencia.\n\n" .
+                "_¡Gracias por confiar en nosotros!_" .
+                ($support ? "\n\n📞 Soporte: $support" : ''),
+
+            'expiring_soon' =>
+                "⚠️ *¡Atención! Licencia por Expirar*\n\n" .
+                "Hola *{client_name}*,\n\n" .
+                "Tu licencia de {company} expirará en *{days_remaining} días*:\n\n" .
+                "🔑 *Clave:* `{license_key}`\n" .
+                "📅 *Expira:* {expires_date}\n" .
+                "🏢 *Producto:* {product_name}\n\n" .
+                "🔄 *¡Renueva ahora para evitar interrupciones!*\n\n" .
+                "Contáctanos para procesar tu renovación." .
+                ($support ? "\n\n📞 Soporte: $support" : ''),
+
+            'status_changed' =>
+                "🔄 *Estado de Licencia Actualizado*\n\n" .
+                "Hola *{client_name}*,\n\n" .
+                "El estado de tu licencia ha sido modificado:\n\n" .
+                "🔑 *Clave:* `{license_key}`\n" .
+                "📊 *Estado anterior:* {old_status}\n" .
+                "📊 *Estado actual:* *{new_status}*\n" .
+                "🏢 *Producto:* {product_name}\n\n" .
+                "{status_message}\n\n" .
+                "Si tienes dudas, no dudes en contactarnos." .
+                ($support ? "\n\n📞 Soporte: $support" : ''),
+
+            'license_expired' =>
+                "🚫 *Licencia Expirada*\n\n" .
+                "Hola *{client_name}*,\n\n" .
+                "Tu licencia de {company} ha expirado:\n\n" .
+                "🔑 *Clave:* `{license_key}`\n" .
+                "📅 *Expiró:* {expires_date}\n" .
+                "🏢 *Producto:* {product_name}\n\n" .
+                "⛔ *El acceso ha sido suspendido.*\n\n" .
+                "🔄 Contáctanos inmediatamente para renovar y recuperar el acceso." .
+                ($support ? "\n\n📞 Soporte: $support" : ''),
+
+            'license_activated' =>
+                "✅ *¡Licencia Reactivada!*\n\n" .
+                "Hola *{client_name}*,\n\n" .
+                "Tu licencia ha sido reactivada en el dominio:\n\n" .
+                "🔑 *Clave:* `{license_key}`\n" .
+                "🌐 *Dominio:* {domain}\n" .
+                "📅 *Válida hasta:* {expires_date}\n\n" .
+                "✅ El sistema ya está funcionando normalmente.\n\n" .
+                "_Gracias por usar {company}_" .
+                ($support ? "\n\n📞 Soporte: $support" : '')
+        ];
+
+        if (!isset($templates[$type])) {
+            return null;
+        }
+
+        $message = $templates[$type];
+
+        $status_messages = [
+            'active'    => '✅ Tu licencia está ahora *ACTIVA* y funcionando.',
+            'suspended' => '⏸️ Tu licencia ha sido *SUSPENDIDA* temporalmente.',
+            'expired'   => '⛔ Tu licencia ha *EXPIRADO*. Contacta para renovar.',
+            'revoked'   => '🚫 Tu licencia ha sido *REVOCADA* permanentemente.'
+        ];
+
+        $replacements = [
+            '{client_name}'   => $data['client_name'] ?? 'Cliente',
+            '{license_key}'   => $data['license_key'] ?? '',
+            '{expires_date}'  => isset($data['expires_at']) && $data['expires_at'] ? date('d/m/Y H:i', strtotime($data['expires_at'])) : '*Permanente*',
+            '{days_remaining}' => $data['days_remaining'] ?? '0',
+            '{old_status}'    => ucfirst($data['old_status'] ?? ''),
+            '{new_status}'    => ucfirst($data['new_status'] ?? ''),
+            '{product_name}'  => $data['product_name'] ?? 'Sistema de Códigos',
+            '{domain}'        => $data['domain'] ?? '',
+            '{company}'       => $company,
+            '{status_message}' => isset($data['new_status']) ? ($status_messages[$data['new_status']] ?? '') : ''
+        ];
+
+        foreach ($replacements as $placeholder => $value) {
+            $message = str_replace($placeholder, $value, $message);
+        }
+
+        return $message;
+    }
+
+    public function checkExpiringLicensesAndNotify() {
+        $alert_days = $this->whatsapp_config['expiry_alert_days'] ?? 3;
+
+        $sql = "
+            SELECT *, DATEDIFF(expires_at, NOW()) as days_remaining
+            FROM licenses
+            WHERE expires_at IS NOT NULL
+            AND DATEDIFF(expires_at, NOW()) = ?
+            AND status = 'active'
+            AND client_phone IS NOT NULL
+            AND client_phone != ''
+        ";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param('i', $alert_days);
+        $stmt->execute();
+        $expiring = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+        $sent_count = 0;
+
+        foreach ($expiring as $license) {
+            $success = $this->sendWhatsAppNotification('expiring_soon', [
+                'client_name'    => $license['client_name'],
+                'client_phone'   => $license['client_phone'],
+                'license_key'    => $license['license_key'],
+                'expires_at'     => $license['expires_at'],
+                'days_remaining' => $license['days_remaining'],
+                'product_name'   => $license['product_name']
+            ]);
+
+            if ($success) {
+                $sent_count++;
+            }
+        }
+
+        $sql_expired = "
+            SELECT *
+            FROM licenses
+            WHERE expires_at IS NOT NULL
+            AND DATE(expires_at) = CURDATE()
+            AND status = 'active'
+            AND client_phone IS NOT NULL
+            AND client_phone != ''
+        ";
+
+        $result_expired = $this->conn->query($sql_expired);
+        if ($result_expired) {
+            while ($license = $result_expired->fetch_assoc()) {
+                $this->updateLicenseStatus($license['id'], 'expired');
+
+                $this->sendWhatsAppNotification('license_expired', [
+                    'client_name'  => $license['client_name'],
+                    'client_phone' => $license['client_phone'],
+                    'license_key'  => $license['license_key'],
+                    'expires_at'   => $license['expires_at'],
+                    'product_name' => $license['product_name']
+                ]);
+
+                $sent_count++;
+            }
+        }
+
+        return $sent_count;
+    }
+
+    private function logWhatsAppSend($phone, $message, $type, $http_code, $response_detail) {
+        try {
+            $stmt = $this->conn->prepare(
+                "INSERT INTO whatsapp_logs (phone, message, type, http_code, response, sent_at) VALUES (?, ?, ?, ?, ?, NOW())"
+            );
+            $response_limited = substr($response_detail, 0, 65535);
+            $stmt->bind_param('sssis', $phone, $message, $type, $http_code, $response_limited);
+            $stmt->execute();
+        } catch (Exception $e) {
+            error_log('Error logging WhatsApp: ' . $e->getMessage());
+        }
     }
 
     public function clearOldLogs() {
