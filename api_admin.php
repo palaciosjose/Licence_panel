@@ -248,6 +248,25 @@ switch ($action) {
         echo json_encode(["success" => false, "error" => "Activacin no encontrada."]);
     }
     break;
+
+    case "extend_license":
+    $data = json_decode(file_get_contents('php://input'), true) ?: [];
+    $license_id = (int)($data['id'] ?? $_POST['id'] ?? 0);
+    $days = (int)($data['days'] ?? $_POST['days'] ?? 0);
+    if ($license_id <= 0 || $days <= 0) {
+        http_response_code(400);
+        echo json_encode(["success" => false, "error" => "Parámetros inválidos."]);
+        exit;
+    }
+
+    $result = $licenseManager->extendLicense($license_id, $days);
+    if ($result['success']) {
+        echo json_encode($result);
+    } else {
+        http_response_code(500);
+        echo json_encode($result);
+    }
+    break;
     
     case "clear_old_logs":
     $result = $licenseManager->clearOldLogs();
