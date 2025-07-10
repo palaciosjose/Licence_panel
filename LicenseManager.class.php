@@ -201,6 +201,39 @@ class LicenseManager {
         return $stmt->get_result()->fetch_assoc();
     }
 
+    /**
+     * Extiende la fecha de expiración de una licencia.
+     *
+     * @param int $id   ID de la licencia a modificar.
+     * @param int $days Cantidad de días a agregar.
+     * @return array Resultado de la operación con la nueva fecha.
+     */
+    public function extendLicense($id, $days) {
+        $id = (int)$id;
+        $days = (int)$days;
+        if ($id <= 0 || $days <= 0) {
+            return ['success' => false, 'error' => 'Parámetros inválidos'];
+        }
+
+        $stmt = $this->conn->prepare("SELECT expires_at FROM licenses WHERE id = ?");
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $result = $stmt->get_result()->fetch_assoc();
+        if (!$result) {
+            return ['success' => false, 'error' => 'Licencia no encontrada'];
+        }
+
+        $current = $result['expires_at'] ? $result['expires_at'] : date('Y-m-d H:i:s');
+        $new_expiration = date('Y-m-d H:i:s', strtotime("$current +$days days"));
+
+        $update = $this->conn->prepare("UPDATE licenses SET expires_at = ? WHERE id = ?");
+        $update->bind_param('si', $new_expiration, $id);
+        if ($update->execute()) {
+            return ['success' => true, 'expires_at' => $new_expiration];
+        }
+        return ['success' => false, 'error' => $this->conn->error];
+    }
+
     public function getActivationDetails($activation_id) {
         if (empty($activation_id) || !is_numeric($activation_id)) return null;
         $sql = "SELECT la.*, l.license_key, l.client_name, l.product_name, l.version, l.expires_at FROM license_activations la JOIN licenses l ON la.license_id = l.id WHERE la.id = ?";

@@ -1979,8 +1979,21 @@ $current_tab = $_GET['tab'] ?? 'dashboard';
         function extendLicense(id) {
             const extension = prompt('¿Cuántos días adicionales desea agregar?', '30');
             if (extension && parseInt(extension) > 0) {
-                // Implementar extensión de licencia
-                alert('Función de extensión - Agregar ' + extension + ' días a licencia ID: ' + id);
+                fetch('api_admin.php?action=extend_license', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id, days: parseInt(extension) })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Licencia extendida hasta ' + data.expires_at);
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(err => alert('Error: ' + err));
             }
         }
         
