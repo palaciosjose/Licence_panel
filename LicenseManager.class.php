@@ -233,7 +233,7 @@ class LicenseManager {
                 COUNT(CASE WHEN created_at >= NOW() - INTERVAL 24 HOUR THEN 1 END) as verifications_24h,
                 COUNT(CASE WHEN created_at >= NOW() - INTERVAL 7 DAY THEN 1 END) as verifications_7d
             FROM license_logs
-            WHERE action = 'verification'";
+            WHERE action IN ('verification','validation')";
         $result = $this->conn->query($sql);
         return $result->fetch_assoc();
     }
@@ -250,7 +250,7 @@ class LicenseManager {
             FROM license_logs ll
             LEFT JOIN licenses l ON ll.license_id = l.id
             LEFT JOIN license_activations la ON ll.activation_id = la.id
-            WHERE ll.action = 'verification'";
+            WHERE ll.action IN ('verification','validation')";
 
         $params = [];
         $types = '';
